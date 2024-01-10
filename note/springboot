@@ -1,0 +1,338 @@
+springBoot学习
+
+    两个依赖：
+        1.spring-boot-starter-parent
+            <dependencyManagement>版本信息锁定，组合一套最优搭配技术版本，继承父工程的项目不用指定版本，通过《依赖传递》版本一致
+        2.spring-boot-starter-web
+
+    配置文件：
+        分类：
+            1.yaml/yml：缩进形式，例如
+            server:
+                port: 8080 (冒号后有空格，没有出错)
+            2.properties:键值对的方式 键=值
+
+        加载优先级：
+            properties > yml > yaml
+
+        yaml文件
+            语法:
+                1.大小写敏感
+                2.数据前必须有空格
+                3.缩进表示层级
+                4.#表示注释
+
+            数据格式
+                1.对象： 缩进
+                2.数组
+                address:                  或 address: [beijing,shanghai]
+                    - beijing
+                    - shanghai
+                3.纯量
+                msg1: 'hello \n world'   单引号忽略转义字符
+                msg2: "hello \n world"   双引号识别...
+
+            参数引用
+                name: lisi
+                person:
+                    name: ${name}
+
+        读取配置内容
+            1.@Value
+                @Value(${person.name})   #对象的注入
+                private String name
+
+                @Value(${address[0]})    #数组的注入
+                private String address
+
+            2.Environment
+                @Autoweird
+                private Environment env;
+                env.getProperty("person.name");
+                env.getProperty("address[0]");
+
+            3.@ConfigurationProperties   #配置和内容相互绑定
+                @Component
+                @ConfigurationProperties(prefix = "person")
+                public class person {
+                    private String name;
+                    private String address;
+
+                    set and get......
+                }
+
+    profile   #不同环境动态切换配置
+        配置方式
+            1.多profile文件方式
+                (application-dev.properties,application-ver.properties...)
+                spring.profiles.active=dev
+
+            2.yml多文档方式
+                ---
+                server:
+                    port: 8080
+                spring:
+                profiles: dev
+                ---
+                server:
+                    port: 8081
+                spring:
+                    profiles: pro
+                ---
+                spring:
+                    profiles:
+                        active: dev
+
+
+        激活方式
+            1.配置文件  #还是需要改配置文件
+            2.虚拟机参数
+                VM options: -Dspring.profiles.active=dev
+            3.命令行参数
+                Program argument: --spring.profiles.active=dev
+
+
+    内部配置加载顺序    #都会被加载，但是高优先级会覆盖低优先级
+        1. file:../config/:当前项目的/config目录下
+        2. file:../       :当前项目的根目录
+        3.classpath:/config/:    #resources文件夹会打包到classpath下
+        4.classpath:
+
+    外部配置加载顺序    #与内部配置互补，内部配置失效，不用打包也能执行
+        1.命令行方式
+
+
+
+    springboot整合其他框架
+        1. Junit    #单元测试
+            搭建SpringBoot工程
+            引入starter-test起步依赖
+            编写测试类
+            添加测试相关注解
+                @RunWith(SpringRunner.class)
+                @SpringBootTest(Classes = 启动类.class)
+            编写测试方法
+
+        2. Redis
+            搭建SpringBoot工程
+            引入redis起步依赖
+            配置redis相关属性
+            注入RedisTemplate模板   #不配置则默认是主机的redis配置 spring.redis.port=...
+            编写测试方法
+
+        3. Mybatis
+            搭建SpringBoot工程
+            引入mybatis起步依赖，添加mysql驱动
+            编写DataSource和Mybatis相关配置
+            定义表和实体类
+            编写dao和mapper文件
+            测试
+
+    springboot自动配置
+        Condition #条件判断，选择性的创建bean的操作   如何判断创建哪些bean?
+            1.ConfigurableApplicationContext  context  #IOC容器   context.getbean
+            2.创建一个Condition.class实现condition接口的matches方法
+            3在IOC注册的bean上@Bean @Conditional(Condition.Class) matches方法返回true创建，返回false不创建
+            需求：判定一个动态类的存在，指定bean是否创建
+
+            1.定义一个注解
+            @Target(ElementType.TYPE,ElementType.METHOD)   #注解的目标：类和方法
+            @Retention(RetentionPolicy.RUNTIME)     #注解的失效：运行时
+            @Document   #生成文档
+            @Conditional({OnClassCondition.class})
+            public @interface ConditionOnClass {
+               String[] values;
+            }
+            2.matches的实现类
+            public class ClassCondition implements Condition {
+                #context :上下文，用于获取环境，IOC容器，ClassLoader对象
+                #metadata:注解的原对象 获取用于注解定义的属性值
+                public boolean matches(ConditionContext context,AnnotatedTypeMetadata meta) {
+                    Map<String,Object> map = metadata.getAnnotationAttributes(ConditionOnClass.class.getName());
+                    ClassforName...
+                }
+
+            }
+            @ConditionalOnMissBean:用于在容器加载bean时检查是否存在目标类型的bean。如果存在，则跳过原始bean的BeanDefinition加载动作；如果不存在，则加载该bean完成注册。
+            3.bean的配置类
+            @Configuration
+            public class UserConfig{
+                @Bean
+                @ConditionOnClass()
+                public User user(){
+                return new user()}
+            }
+注：通过配置类@Configuration和@Bean来注册bean与直接@Component的区别是条件满足时创建 Bean，并且希望以编程方式进行配置，可以在 @Bean 方法中执行任意的逻辑，包括条件检查、动态参数配置
+
+
+        切换内置web服务器  #springboot默认是tomcat  还有Jetty,Netty,Undertow
+            @ConditionalOnWebApplication
+            1.排除tomcat的依赖
+            2.添加
+
+
+        @Enable*注解  #动态启用某些功能，底层使用@Import注解导入配置类，实现Bean的动态加载
+            @ComponentScan 默认扫描范围:当前引导类所在包及其子包
+            @ComponentScan("**.config") #繁琐，不能直接使用
+            @Import(UserConfig.class) 加载配置类 ，这些类都会被spring创建，并放到IOC容器
+            对@Import进行封装
+                @Target(ElementType.TYPE)
+                @Retention(RetentionPolicy.RUNTIME)
+                @Documented
+                @Import(UserConfig.class)
+                public @interface EnableUser {}
+
+        @Import注解 #4种用法
+            1.导入bean                #@Import(User.class)
+            2.导入配置类
+            3.导入ImportSelector实现类，一般用于加载配置文件中的类  #返回类全限定名的数组
+                public interface ImportSelector(){
+                    public String[] selectImports(AnnotationMetadata importingClassMetadata);
+                }
+            4.导入ImportBeanDefinitionRegistrar实现类
+
+        @EnableAutoConfiguration注解
+            加载META-INF/spring.factories文件夹里的配置类
+
+        需求：自定义redis-starter,要求当导入redis坐标时，springBoot自动创建jedis的Bean
+            1.创建redis-spring-boot-autoconfigure模块
+            2.创建redis-spring-boot-starter模块，依赖redis-spring-boot-autoconfigure的模块
+            3.在redis-spring-boot-autoconfigure模块初始化Jedis的Bean,并定义META-INF、spring.factories文件
+            4.在测试模块中引入自定义的redis-starter依赖，测试获取Jedis的Bean，操作redis
+
+
+    SpringBoot监听机制            #对Java监听机制的封装
+        1.Java事件监听机制
+            事件：Event,继承java.util.EventObject类的对象
+            事件源：Source，任意对象Object
+            监听器：Listener,实现java.util.EventListener接口的对象
+
+        2.SpringBoot监听机制
+            项目启动时，会对几个监听器进行回调，可以实现这些监听器接口，项目启动时完成操作
+            分别为：ApplicationContextInitializer,SpringApplicationRunListener,CommandLineRunner,ApplicationRunner
+            ApplicationContextInitializer :
+                initialize: 需要配置生效，META-INF/spring.factories 没有准备IOC容器之前生效
+            SpringApplicationRunner:    //需要配置生效，META-INF/spring.factories  并且需要构造init
+                starting:
+                environmentPrepared:
+                contextPrepared:
+                contextLoading:
+                started:
+                running:
+                failed:
+            CommandLineRunner:
+                run:当项目启动后被调用 例如把数据库的信息加载到缓存中
+            ApplicationRunner:
+                run:当项目启动后被调用
+
+        3.ApplicationListener
+        -------------------------------------------------------------------------------------------
+            public class CustomEvent extends ApplicationEvent {
+                private String message;
+                public CustomEvent(Object source, String message) {
+                    super(source);
+                    this.message = message;
+                }
+                public String getMessage() {
+                    return message;
+                }
+            }
+        --------------------------------------------------------------------------------------------
+            @Component
+            public class CustomEventListener implements ApplicationListener<CustomEvent> {
+                @Override
+                public void onApplicationEvent(CustomEvent event) {
+                    System.out.println("Received a CustomEvent with message: " + event.getMessage());
+                }
+            }
+        ---------------------------------------------------------------------------------------------
+            @Component
+            public class EventPublisher {
+                public void publishEvent(String message) {
+                    GenericApplicationContext context = new GenericApplicationContext();
+                    context.publishEvent(new CustomEvent(this, message));
+                    context.close();
+                }
+            }
+
+    Spring-AOP面向切面    #日志记录，权限验证，事务处理，效率检查，异常处理，缓存处理，数据持久化，内容分发
+
+        1.概念
+            @Aspect 切面类 由切点pointcut和通知advice组成,逻辑上是内容的载体的概念，横切逻辑和连接点的定义
+
+            @pointcut 切点 每个类都有多个连接点，理解为连接点的集合
+
+            @joinpoint 连接点 程序执行的某个特定位置，如某个方法调用前后等
+
+            @weaving 织入 将增强添加到具体连接点的过程
+
+            @advice 通知 是织入到目标连接点的一段代码
+                @BeforeAdvice 前置通知，目标方法调用之前执行，注：无论方法是否异常都执行
+                @After return advice 目标方法执行后执行 注：该方法没有抛出异常
+                @After throwing advice 目标方法抛出异常时执行，可以获取异常信息
+                @After finally advice 目标方法执行后执行，无论是否抛出异常
+                @Around advice 环绕通知，最强大的通知，可以控制目标方法的执行 调用ProceedingJoinPoint.proceed()可以在目标执行全过程中执行
+
+            @target 目标对象 通知织入的目标类
+
+            @aop proxy 增强后的代理对象
+
+         2.Aspect驱动 实现步骤
+
+            1.定义一个切面类：声明的类中添加@Aspect@Component,引入spring-boot-starter-aop包
+
+            2.定义切点pointCut 并定义切点在哪些地方执行 使用@PointCut，如@PointCut(public*com.xxx.xxx.*.*(..))
+              规则：修饰符+返回类型+哪些包下的类+哪些方法+方法参数 *表示不限，..标识参数不限
+
+            3.定义advice通知
+              利用通知的5种类型注解 @Before @After @AfterReturn @AfterThrowing @Around来完成某些切点的增强动作，例如@Before("mypointcut()")
+
+
+    Springboot启动流程分析
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,53 @@
+quartz学习                                            #开源的作业调度框架
+
+                            Scheduler
+                                |
+                         ----------------
+                         |               |
+                     JobDetail        Trigger
+                         |
+                        Job
+
+    Key                                              #jobKey和TriggerKey是job和trigger的标识，由name和group构成，一个group下name唯一
+
+    Job                                              #具体的任务及执行任务的具体方法 实现接口的excute()方法
+        调用excute会创建一个JobDetail实例，并且在使用后被废弃回收，因此不能存在有状态的数据属性
+
+    JobDetail                                        #包括了任务的唯一标识和具体要执行的任务Job,可通过JobDataMap储存任务实例状态信息  定义作业的实例
+        JobBuilder                                   #用于构建JobDetail实例
+        可以将Job的不同JobDetail实例注册在scheduler上，通过不同的trigger触发，通过JobDataMap传入数据
+
+    Trigger                                          #触发器-什么时候去做，可通过JobDataMap给Job传递触发相关参数
+        1.属性：
+            triggerKey：trigger身份
+            jobKey:被执行jobDetail的身份
+            startTime:开始起效时间
+            endTime：最后失效时间
+            priority:优先级 有限线程时优先级高的执行（同时触发的trigger之间进行比较）
+        2.TriggerBuilder                             #用于定义/构建触发器实例
+        3.分类
+            SimpleTrigger                            #开始时间，结束时间，重复次数，重复时间间隔
+            CronTrigger                              #crontab语法
+
+    Scheduler                                        #调度器   什么时候需要做什么任务   #包括了JobDetail和Trigger
+        SchedulerFactory
+            StdSchedulerFactory                      #通过一组java.util.properties来创建SchedulerFactory
+            DirectSchedulerFactory                   #硬编程创建Scheduler
+
+    Listener                                         #用于根据调度程序中发生的事件执行操作
+        1.TriggerListener                            #触发器触发，触发失灵，触发作业完成
+        2.JobListener                                #job即将执行，job完成执行
+        3.SchedulerListener                          #添加，删除job/触发器，调度程序中的严重错误，关闭调度程序的通知
+
+    JobStore                                         #JobStore负责跟踪您提供给调度程序的所有“工作数据”
+        1.RAMJobStore                                #RAMJobStore是使用最简单的JobStore，它也是性能最高的,把工作数据储存在RAM中
+        2.JDBC JobStore                              #储存在数据库中
+
+
+
+
+注：
+1.Quartz提供的“builder”类，是一种领域特定语言（DSL,Domain sepcific language）,级联式的API非常方便用户使用
+2.某些调度器把Job和Trigger合在一起,Quartz把Job和Trigger分开的好处是解耦合，一个Job可以由多个不同的触发方式等
+
+

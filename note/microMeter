@@ -1,0 +1,9 @@
+Micrometer                                                       #Java 平台上的性能数据收集提供了一个通用的 API
+
+    1.两个核心：
+        计量器(Meter)
+            Counter
+            Gauge
+            Timer
+            Summary
+        计量器注册表(MeterRegistry)

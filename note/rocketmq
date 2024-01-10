@@ -1,0 +1,3 @@
+https://rocketmq.apache.org/zh/docs/4.x/consumer/01concept2
+DefaultMQPushConsumer 是用LitePullConsumer来实现的
+AllocateMessageQueueAveragelyByCircle

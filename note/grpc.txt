@@ -1,0 +1,99 @@
+grpc   高性能开源远程方法调用
+
+    1.差异：rpc:各种协议和编码方式
+          grpc:protoBuf HTTP/2协议
+
+
+    2.场景：微服务通信
+            跨数据中心通信
+            实时通信
+
+
+    3.实现过程
+          1.定义服务和消息：
+          -----------------------------------
+          //版本号
+          syntax="proto3"
+          package com.rRPC。hello
+          //定义服务
+          service HelloAPI{
+            rpc SayHello(HelloRequest) returns(HelloReply);
+          }
+          //定义实体
+          message HelloRequest {
+            string name = 1;
+          }
+          //定义响应实体
+          message HelloReply {
+            string message = 1;
+          }
+          -------------------------------------
+          2.自动生成代码
+          -------------------------------------
+              plugins--protoBuf--compile--compile-custom
+              文件位置在target/generated-sources/protoBuf
+
+          3.实现服务接口
+              实现一个继承于生成服务的接口 
+              public class SayHelloServiceImpl extends HelloAPIGrpc.HelloAPIImplBase{
+                //通过responseObserver响应
+              }
+
+          4.创建gRPC服务器
+              ------------------------------------------
+              //一个启动server
+              public class HelloServer {
+                io.gRPC Server
+              }
+          5.创建gRPC客户端
+              ManagedChannel进行调用
+
+
+    4.ProtoBuf3基本使用
+          1.基本类型
+          2.嵌套类型
+            Proto{
+              Proto1 {
+
+              }
+            }
+          3.集合类型  repeated
+          4.枚举类型  Enums
+          5.导入其他Proto import
+          6.Map类型   map<>
+          
+    5.四种通信模式
+          1.单一请求，单一响应（上面的例子）
+              场景：获取某个资源的详细信息，例如获取用户的个人资料
+                   简单的计算 
+
+          2.客户端流式
+              客户端通过发送多个请求，等待服务端返回一个响应
+              场景：逐步上传文件，每次发送一个数据块
+                    批量发送数据
+              service OpenAPI {
+                rpc ClienStreaming (stream Reuest) returns (Response)
+              }
+
+          3.客户端流式
+              服务器通过流式方式发送多个响应给客户端，客户端等待服务器发送完所有响应后结束
+              场景：服务器向客户端推送消息，流式传输文件
+                    服务器需要返回多个相关结果给客户端，例如搜索结果列表
+              service OpenAPI {
+                rpc ClienStreaming (Reuest) returns (stream Response)
+              }
+
+          4.双向流式
+              客户端和服务端通过流式方式同时发送和接收多个消息
+              场景：聊天应用，实时协作工具
+                    交换大量数据
+              service OpenAPI {
+                rpc ClienStreaming (stream Reuest) returns (stream Response)
+              }
+
+    6.gRPC拦截器   在gRPC调用中对请求和响应进行拦截
+          1. 服务端拦截器  implement ServerInterceptor  配置server.Iintercept
+          2. 客户端拦截器  implement ClientInterceptor
+
+    7.demo:简单聊天室
+          https://www.bilibili.com/video/BV1Ah4y1S7NX?p=7&spm_id_from=pageDriver&vd_source=059ba13b3f91eaac5dc3bf536ebccf3b

@@ -1,0 +1,5 @@
+ajax  async javascript and XML(异步JavaScript和XML)
+    1.说明
+        1.前后台交互的能⼒ 也就是我们客户端给服务端发送消息的⼯具，以及接受响应的⼯具
+        2.AJAX 是与服务器交换数据并更新部分网页的艺术，在不重新加载整个页面的情况下。
+        3.是⼀个 默认异步执⾏机制的功能,AJAX分为同步（async = false）和异步（async = true）
